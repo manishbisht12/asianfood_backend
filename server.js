@@ -21,10 +21,17 @@ connectDB();
 const app = express();
 const httpServer = createServer(app);
 
+// ================= ALLOWED ORIGINS =================
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://asianfood-steel.vercel.app"
+];
+
 // ================= SOCKET.IO =================
 export const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
     credentials: true,
   },
 });
@@ -38,25 +45,24 @@ io.on("connection", (socket) => {
 });
 
 // ================= MIDDLEWARES =================
-app.use((req, res, next) => {
-  console.log(`📡 ${req.method} ${req.url}`);
-  next();
-});
 app.use(express.json());
 app.use(cookieParser());
 
+// ✅ CORS FIX (PRODUCTION SAFE)
 app.use(
   cors({
-    origin: ["http://localhost:3000",
-     "https://asianfood-steel.vercel.app/"
-    ],
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
 
 app.use(passport.initialize());
-
-console.log("ENV API KEY:", process.env.CLOUDINARY_API_KEY);
 
 // ================= ROUTES =================
 app.use("/auth", authRoutes);
@@ -70,6 +76,8 @@ app.get("/", (req, res) => {
 });
 
 // ================= START SERVER =================
-httpServer.listen(process.env.PORT || 4000, () => {
-  console.log(`✅ Server running on PORT ${process.env.PORT || 4000}`);
+const PORT = process.env.PORT || 4000;
+
+httpServer.listen(PORT, () => {
+  console.log(`✅ Server running on PORT ${PORT}`);
 });

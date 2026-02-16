@@ -41,8 +41,8 @@ router.get(
 
         res.cookie("token", token, {
             httpOnly: true,
-            secure: false,
-            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "None" : "lax",
         });
 
         res.redirect("http://localhost:3000");

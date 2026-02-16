@@ -64,16 +64,6 @@ app.use(
 
 app.use(passport.initialize());
 
-// Startup checks: warn if important env vars are missing in production
-if (process.env.NODE_ENV === "production") {
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_CALLBACK_URL) {
-    console.warn('[STARTUP] Missing Google OAuth env vars (GOOGLE_CLIENT_ID/SECRET/CALLBACK). Google sign-in will not work until these are set and the Google Console redirect URI matches.');
-  }
-  if (!process.env.FRONTEND_URL) {
-    console.warn('[STARTUP] FRONTEND_URL is not set — Google callback redirect will fall back to default frontend URL.');
-  }
-}
-
 // ================= ROUTES =================
 app.use("/auth", authRoutes);
 app.use("/api", foodRoute);

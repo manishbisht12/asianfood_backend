@@ -8,6 +8,7 @@ export const login = async (req, res) => {
     const { email, password } = req.body;
 
     console.log('[AUTH][login] request body keys:', Object.keys(req.body), 'hasEmail=', !!email, 'hasPassword=', password ? 'present' : 'missing');
+    console.log('[AUTH][login] origin:', req.headers.origin || req.get('origin'), 'content-type:', req.get('Content-Type'));
 
     if (!email || !password) {
       return res.status(400).json({ message: "Email and Password is  required" });

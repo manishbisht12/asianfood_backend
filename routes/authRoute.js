@@ -45,7 +45,9 @@ router.get(
             sameSite: process.env.NODE_ENV === "production" ? "None" : "lax",
         });
 
-        res.redirect("http://localhost:3000");
+        const redirectTarget = process.env.FRONTEND_URL || (process.env.NODE_ENV === "production" ? "https://asianfood-steel.vercel.app" : "http://localhost:3000");
+        console.log(`[AUTH][google/callback] user=${req.user?._id} redirecting to ${redirectTarget}`);
+        res.redirect(redirectTarget);
     }
 );
 

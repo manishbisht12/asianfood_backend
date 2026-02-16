@@ -176,7 +176,15 @@ export const signup = async (req, res) => {
       userByEmail.otpVerified = false;
 
       await userByEmail.save();
-      await sendOtpEmail(email, otp);
+      try {
+        await sendOtpEmail(email, otp);
+      } catch (emailError) {
+        console.error("[AUTH][signup] resend OTP email failed:", emailError.message);
+        return res.status(500).json({
+          message: "Failed to send OTP email. Please try again.",
+          error: emailError.message,
+        });
+      }
 
       return res.status(200).json({
         message: "OTP resent successfully to email",
@@ -202,7 +210,15 @@ export const signup = async (req, res) => {
       otpExpiresAt,
     });
 
-    await sendOtpEmail(email, otp);
+    try {
+      await sendOtpEmail(email, otp);
+    } catch (emailError) {
+      console.error("[AUTH][signup] new user OTP email failed:", emailError.message);
+      return res.status(500).json({
+        message: "Failed to send OTP email. Please try again.",
+        error: emailError.message,
+      });
+    }
 
     res.status(200).json({
       message: "OTP sent successfully to email",

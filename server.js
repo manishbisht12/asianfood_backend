@@ -19,12 +19,14 @@ connectDB();
 
 // ================= APP & SERVER =================
 const app = express();
+app.set('trust proxy', 1); // trust first proxy (required when running behind a proxy/load-balancer)
 const httpServer = createServer(app);
 
 // ================= ALLOWED ORIGINS =================
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://asianfood-steel.vercel.app"
+  "https://asianfood-steel.vercel.app",
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
 ];
 
 // ================= SOCKET.IO =================
@@ -73,6 +75,7 @@ if (process.env.NODE_ENV === "production") {
     console.warn('[STARTUP] FRONTEND_URL is not set — Google callback redirect will fall back to default frontend URL.');
   }
 }
+console.log('[STARTUP] FRONTEND_URL=%s GOOGLE_CALLBACK_URL=%s', process.env.FRONTEND_URL || '<not-set>', process.env.GOOGLE_CALLBACK_URL || '<not-set>');
 
 // ================= ROUTES =================
 app.use("/auth", authRoutes);

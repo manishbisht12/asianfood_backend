@@ -33,8 +33,13 @@ router.get('/google', (req, res, next) => {
     return res.status(503).json({ message: 'Google OAuth not configured on server' });
   }
 
-  console.log('[AUTH][google] start OAuth - origin=', req.headers.origin || req.get('origin'));
-  passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+  console.log('[AUTH][google] start OAuth - origin=', req.headers.origin || req.get('origin'), 'requestedRedirect=', req.query.redirect || req.query.state || null);
+
+  const state = req.query.redirect ? encodeURIComponent(req.query.redirect) : (req.query.state ? encodeURIComponent(req.query.state) : undefined);
+  const authOptions = { scope: ['profile', 'email'] };
+  if (state) authOptions.state = state;
+
+  passport.authenticate('google', authOptions)(req, res, next);
 });
 
 router.get('/google/callback', (req, res, next) => {
@@ -59,9 +64,24 @@ router.get('/google/callback', (req, res, next) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
+      path: '/',
     });
 
-    const redirectTarget = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://asianfood-steel.vercel.app' : 'http://localhost:3000');
+    // Accept state (relative path or allowed FRONTEND_URL) and validate to prevent open-redirects
+    const rawState = req.query.state ? decodeURIComponent(req.query.state) : null;
+    const defaultFrontend = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://asianfood-steel.vercel.app' : 'http://localhost:3000');
+    let redirectTarget = defaultFrontend;
+
+    if (rawState) {
+      if (rawState.startsWith('/')) {
+        redirectTarget = defaultFrontend.replace(/\/$/, '') + rawState;
+      } else if (process.env.FRONTEND_URL && rawState.startsWith(process.env.FRONTEND_URL)) {
+        redirectTarget = rawState;
+      } else {
+        console.warn('[AUTH][google/callback] rejected unsafe state redirect:', rawState);
+      }
+    }
+
     console.log(`[AUTH][google/callback] user=${req.user?._id} redirecting to ${redirectTarget}`);
     return res.redirect(redirectTarget);
   });

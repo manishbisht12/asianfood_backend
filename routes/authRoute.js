@@ -69,7 +69,7 @@ router.get('/google/callback', (req, res, next) => {
 
     // Accept state (relative path or allowed FRONTEND_URL) and validate to prevent open-redirects
     const rawState = req.query.state ? decodeURIComponent(req.query.state) : null;
-    const defaultFrontend = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://asianfood-steel.vercel.app' : 'http://localhost:3000');
+    const defaultFrontend = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://asianfood-steel.vercel.app' : 'https://asianfood-steel.vercel.app');
     let redirectTarget = defaultFrontend;
 
     if (rawState) {

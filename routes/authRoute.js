@@ -33,25 +33,9 @@ router.get('/google', (req, res, next) => {
     return res.status(503).json({ message: 'Google OAuth not configured on server' });
   }
 
-  const origin = req.headers.origin || req.get('origin');
-  const requestedRedirect = req.query.redirect || req.query.state;
-  console.log('[AUTH][google] start OAuth - origin=', origin, 'requestedRedirect=', requestedRedirect || null);
+  console.log('[AUTH][google] start OAuth - origin=', req.headers.origin || req.get('origin'), 'requestedRedirect=', req.query.redirect || req.query.state || null);
 
-  let state;
-  if (requestedRedirect) {
-    try {
-      if (requestedRedirect.startsWith('/')) {
-        state = encodeURIComponent(requestedRedirect);
-      } else if (process.env.FRONTEND_URL && requestedRedirect.startsWith(process.env.FRONTEND_URL)) {
-        state = encodeURIComponent(requestedRedirect);
-      } else {
-        console.warn('[AUTH][google] rejected unsafe requestedRedirect:', requestedRedirect);
-      }
-    } catch (e) {
-      console.warn('[AUTH][google] invalid requestedRedirect format:', requestedRedirect);
-    }
-  }
-
+  const state = req.query.redirect ? encodeURIComponent(req.query.redirect) : (req.query.state ? encodeURIComponent(req.query.state) : undefined);
   const authOptions = { scope: ['profile', 'email'] };
   if (state) authOptions.state = state;
 
@@ -63,17 +47,15 @@ router.get('/google/callback', (req, res, next) => {
     return res.status(503).json({ message: 'Google OAuth not configured on server' });
   }
 
-  const failureRedirect = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://asianfood-steel.vercel.app' : '/');
-
-  passport.authenticate('google', { session: false, failureRedirect })(req, res, function (err) {
+  passport.authenticate('google', { session: false, failureRedirect: process.env.FRONTEND_URL || '/' })(req, res, function (err) {
     if (err) {
       console.error('[AUTH][google/callback] passport error', err);
-      return res.redirect(failureRedirect);
+      return res.redirect(process.env.FRONTEND_URL || '/');
     }
 
     if (!req.user) {
       console.warn('[AUTH][google/callback] no user found after authentication');
-      return res.redirect(failureRedirect);
+      return res.redirect(process.env.FRONTEND_URL || '/');
     }
 
     const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -98,12 +80,6 @@ router.get('/google/callback', (req, res, next) => {
       } else {
         console.warn('[AUTH][google/callback] rejected unsafe state redirect:', rawState);
       }
-    }
-
-    // Final safety: never redirect to localhost from a production server.
-    if (process.env.NODE_ENV === 'production' && /localhost|127\.0\.0\.1/.test(redirectTarget)) {
-      console.warn('[AUTH][google/callback] blocked redirect to localhost in production:', redirectTarget);
-      redirectTarget = process.env.FRONTEND_URL || 'https://asianfood-steel.vercel.app';
     }
 
     console.log(`[AUTH][google/callback] user=${req.user?._id} redirecting to ${redirectTarget}`);

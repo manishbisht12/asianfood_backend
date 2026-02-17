@@ -34,8 +34,9 @@ export const login = async (req, res) => {
 
     const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "None" : "lax",
+      secure: true,
+      sameSite: "none",
+      path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     };
 
@@ -78,72 +79,6 @@ export const logout = async (req, res) => {
   }
 };
 
-
-// export const signup = async (req, res) => {
-//   try {
-//     const { email, mobile } = req.body;
-
-//     if (!email || !mobile) {
-//       return res.status(400).json({ message: "Email and mobile required" });
-//     }
-
-//     const userByEmail = await User.findOne({ email });
-//     const userByMobile = await User.findOne({ mobile });
-
-//     // Case 1: Same email & same mobile (same user)
-//     if (
-//       userByEmail &&
-//       userByMobile &&
-//       userByEmail._id.toString() === userByMobile._id.toString()
-//     ) {
-//       // OTP not expired
-//       if (userByEmail.otpExpiresAt && userByEmail.otpExpiresAt > Date.now()) {
-//         return res.status(400).json({
-//           message: "OTP already sent, please wait",
-//         });
-//       }
-
-//       // OTP expired → resend
-//       const otp = Math.floor(1000 + Math.random() * 9000).toString();
-//       const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-//       userByEmail.otp = otp;
-//       userByEmail.otpExpiresAt = otpExpiresAt;
-//       userByEmail.otpVerified = false;
-
-//       await userByEmail.save();
-
-//       return res.status(200).json({
-//         message: "OTP resent successfully",
-//       });
-//     }
-
-//     // Case 2: Email OR mobile exists (but not both)
-//     if (userByEmail || userByMobile) {
-//       return res.status(400).json({
-//         message: "User already exists",
-//       });
-//     }
-
-//     // Case 3: New user
-//     const otp = Math.floor(1000 + Math.random() * 9000).toString();
-//     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-//     await User.create({
-//       email,
-//       mobile,
-//       otp,
-//       otpExpiresAt,
-//     });
-
-//     res.status(200).json({
-//       message: "OTP sent successfully",
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
 
 export const signup = async (req, res) => {
   try {

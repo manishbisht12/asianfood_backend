@@ -30,27 +30,25 @@ router.get('/google/status', (req, res) => {
 
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: '/' }), (req, res) => {
+router.get('/google/callback', passport.authenticate('google', { session: false, failureRedirect: process.env.FRONTEND_URL || '/' }), (req, res) => {
   if (!req.user) {
     console.warn('[AUTH][google/callback] no user found after authentication');
-    return res.redirect('/');
+    return res.redirect(process.env.FRONTEND_URL || '/');
   }
 
   const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-  const isProduction = process.env.NODE_ENV === 'production';
   res.cookie('token', token, {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     path: '/',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  // Determine frontend URL
-  const frontendUrl = process.env.FRONTEND_URL || (isProduction ? 'https://asianfood.vercel.app' : 'http://localhost:3000');
+  // Accept state (relative path or allowed FRONTEND_URL) and validate to prevent open-redirects
   const rawState = req.query.state ? decodeURIComponent(req.query.state) : null;
-  let redirectTarget = frontendUrl;
+  const defaultFrontend = process.env.FRONTEND_URL || (process.env.NODE_ENV === 'production' ? 'https://asianfood-steel.vercel.app' : 'http://localhost:3000');
+  let redirectTarget = defaultFrontend;
 
   if (rawState) {
     if (rawState.startsWith('/')) {
